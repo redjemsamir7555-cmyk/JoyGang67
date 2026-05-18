@@ -3,226 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOYGANG67 // ULTRA-SOCIAL</title>
+    <title>GOYGANG67 // MULTIVERSE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* STYLE FRUTIGER AERO / FUTURISTE */
-        :root {
-            --glass: rgba(255, 255, 255, 0.25);
-            --grad: linear-gradient(180deg, #00c6ff 0%, #0072ff 100%);
-            --aero-green: #40ff00;
-        }
+        /* TRANSITIONS & ANIMATIONS */
+        * { transition: background 0.5s, color 0.5s; box-sizing: border-box; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .backflip { animation: flip 1s ease; }
+        @keyframes flip { 100% { transform: rotateY(360deg); } }
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: 'Segoe UI', sans-serif;
-            background: url('https://e0.pxfuel.com/wallpapers/151/710/desktop-wallpaper-frutiger-aero-windows7.jpg') no-repeat center center fixed;
-            background-size: 100% 100%; /* Étiré comme demandé */
-            overflow: hidden; transition: 0.5s;
-        }
-
-        .full-container {
-            display: grid; grid-template-columns: 280px 1fr;
-            height: 100vh; width: 100vw; gap: 15px; padding: 15px; box-sizing: border-box;
-        }
-
-        /* GLASSMORPHISM */
-        .glass {
-            background: var(--glass); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        /* SIDEBAR */
-        .sidebar { padding: 25px; color: white; }
-        .sidebar h1 { 
-            font-style: italic; font-weight: 900; font-size: 2em; 
-            text-shadow: 0 0 10px #00c6ff; margin-bottom: 30px;
-        }
+        /* THEMES */
+        :root { --bg-url: url('https://e0.pxfuel.com/wallpapers/151/710/desktop-wallpaper-frutiger-aero-windows7.jpg'); --glass: rgba(255,255,255,0.2); }
+        .theme-dark { --glass: rgba(0,0,0,0.7); color: #00ff41; }
+        .theme-shrek { --glass: rgba(139, 191, 60, 0.6); --grad: linear-gradient(to bottom, #5d4037, #8bc34a); }
         
-        button {
-            padding: 12px; margin-bottom: 10px; border-radius: 50px; border: none;
-            background: var(--grad); color: white; font-weight: bold; cursor: pointer;
-            box-shadow: inset 0 5px 10px rgba(255,255,255,0.4); transition: 0.2s;
+        body, html { 
+            margin: 0; padding: 0; width: 100vw; height: 100vh; 
+            background: var(--bg-url) no-repeat center center fixed; background-size: 100% 100%;
+            font-family: 'Segoe UI', sans-serif; overflow: hidden;
         }
-        button:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        /* CHAT WINDOW */
-        #chat-win { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        
-        .msg-bubble {
-            padding: 15px; border-radius: 20px; background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3); color: white;
-            max-width: 80%; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        /* LAYOUT */
+        #desktop { width: 100%; height: 100%; position: relative; padding: 20px; overflow: hidden; }
+
+        .panel { 
+            background: var(--glass); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        .msg-bubble b { font-size: 1.1em; display: block; margin-bottom: 5px; }
-        .msg-bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid white; }
+
+        /* SIDEBAR FIXE */
+        #sidebar { position: absolute; left: 10px; top: 10px; width: 300px; bottom: 10px; z-index: 100; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        
+        /* ZONE DE MESSAGES LIBRES */
+        #canvas { position: absolute; top: 0; left: 320px; right: 0; bottom: 0; pointer-events: none; }
+        
+        .msg-node { 
+            position: absolute; pointer-events: auto; padding: 15px; min-width: 150px; cursor: move;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            resize: both; overflow: auto;
+        }
 
         /* INPUTS */
-        .input-bar { padding: 20px; background: rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 10px; }
-        .row { display: flex; gap: 10px; }
-        input[type="text"] {
-            flex: 1; padding: 12px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.1); color: white; outline: none;
+        input, button, select { 
+            padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.4); 
+            background: rgba(255,255,255,0.1); color: inherit; font-weight: bold;
         }
+        button { cursor: pointer; background: #0072ff; color: white; }
+        button:disabled { background: #555; cursor: not-allowed; }
 
         /* JUMPSCARE */
-        #jumpscare-overlay {
-            position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999;
-            display:none; background:black;
+        #jumpscare { 
+            position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999; 
+            display:none; background: black;
         }
-        .jumpscare-flash { animation: flash-anim 0.05s infinite; }
+        .flash { animation: flash-anim 0.05s infinite; }
         @keyframes flash-anim { 0% { filter: invert(0); } 100% { filter: invert(1); } }
-        @keyframes pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        
+        #cooldown-img { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; display: none; }
     </style>
 </head>
-<body>
+<body id="body">
 
-<div id="jumpscare-overlay"></div>
+<div id="jumpscare"></div>
 
-<div class="full-container">
-    <div class="sidebar glass">
-        <h1>GOY SOCIAL</h1>
-        <p>Pseudo Color:</p>
-        <input type="color" id="user-color" value="#40ff00" style="width:100%; height:40px; border:none; border-radius:10px;">
-        <br>
-        <button onclick="changeBg()">MODIF FOND D'ÉCRAN</button>
-        <button onclick="changeStyle()">MODIF STYLE (GLOSSY)</button>
-        <hr style="width:100%; opacity:0.2; margin: 20px 0;">
-        <button style="background: red;" onclick="adminClear()">TOUT SUPPRIMER</button>
-        <button style="background: black; color: red;" onclick="sendJumpscare()">⚠️ JUMPSCARE ALL</button>
-    </div>
-
-    <div class="chat-area glass">
-        <div id="chat-win"></div>
+<div id="desktop">
+    <!-- SIDEBAR -->
+    <div id="sidebar" class="panel">
+        <h1 style="margin:0; font-style: italic;">GOYGANG67</h1>
         
-        <div class="input-bar">
-            <div class="row">
-                <input type="text" id="username" placeholder="Pseudo..." style="width: 25%;">
-                <input type="text" id="msg-input" placeholder="Écris quelque chose de futuriste...">
-                <button onclick="sendAll()" style="width: 150px;">ENVOYER</button>
-            </div>
-            <div class="row">
-                <label style="color:white; font-size: 0.8em;">Partager fichiers (Multi):</label>
-                <input type="file" id="file-input" multiple style="color:white;">
-            </div>
+        <input type="text" id="user" placeholder="Pseudo">
+        <input type="color" id="u-color" value="#ffffff" title="Couleur Pseudo">
+        <input type="text" id="msg-in" placeholder="Message... (Tapes 67 !)">
+        <input type="number" id="txt-size" value="16" title="Taille texte">
+        
+        <div style="font-size: 0.8em;">Partager : 
+            <input type="file" id="f-in" multiple> 
+            ou URL : <input type="text" id="url-in" placeholder="Lien image...">
         </div>
+
+        <button id="send-btn" onclick="send('text')">ENVOYER</button>
+        
+        <hr style="width:100%; opacity:0.2;">
+        
+        <button id="jump-btn" disabled onclick="send('jumpscare')" style="background:red;">JUMPSCARE ALL (0/5)</button>
+        <img id="cooldown-img" src="https://media.tenor.com/r9GmMxwqtwgAAAAe/jeff-the-killer-that-face.png">
+
+        <button onclick="changeGlobalBg()">CHANGER FOND ALL</button>
+        <select onchange="changeGlobalStyle(this.value)">
+            <option value="default">Style: Frutiger Aero</option>
+            <option value="dark">Style: Hacker Dark</option>
+            <option value="shrek">Style: Shrek Swamp</option>
+        </select>
+        <button onclick="toggleThemeLocal()">MODE SOMBRE/CLAIR (MOI)</button>
+        <button onclick="adminClear()" style="background:black;">WIPE ALL DATABASE</button>
     </div>
+
+    <!-- ZONE DE DESSIN MESSAGES -->
+    <div id="canvas"></div>
 </div>
 
 <script>
-    // --- CONFIGURATION CORRIGÉE ---
     const S_URL = 'https://cqxelnijwtjdnczpaggs.supabase.co';
     const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxeGVsbmlqd3RqZG5jenBhZ2dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODY4NjIsImV4cCI6MjA5NDY2Mjg2Mn0.LPElYtLB8NGV70_Y4yWCu8xb6SUBz67_Z7DhypQjPEI';
     const sb = supabase.createClient(S_URL, S_KEY);
 
-    let lastJumpscareId = null;
+    let msgCount = 0;
+    let lastId = null;
 
-    // --- LOGIQUE CHAT ---
-    async function loadChat() {
-        const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
-        if (error) return;
+    // --- DETECTION 67 ---
+    document.getElementById('msg-in').addEventListener('input', (e) => {
+        if(e.target.value.includes('67')) {
+            document.body.classList.add('backflip');
+            setTimeout(() => document.body.classList.remove('backflip'), 1000);
+        }
+    });
 
-        const win = document.getElementById('chat-win');
-        win.innerHTML = '';
+    // --- LOGIQUE ENVOI ---
+    async function send(type) {
+        const u = document.getElementById('user').value || 'Anonyme';
+        const c = document.getElementById('u-color').value;
+        const size = document.getElementById('txt-size').value + 'px';
+        let content = document.getElementById('msg-in').value;
+        const urlIn = document.getElementById('url-in').value;
+        const files = document.getElementById('f-in').files;
+
+        if(type === 'text') {
+            if(urlIn) content = urlIn;
+            if(files.length > 0) {
+                for(let f of files) {
+                    const path = Date.now() + "_" + f.name;
+                    const { data } = await sb.storage.from('fichiers').upload(path, f);
+                    if(data) {
+                        const link = S_URL + "/storage/v1/object/public/fichiers/" + path;
+                        await sb.from('messages').insert([{ username:u, content:link, color:c, size:size, type:'text', x: Math.random()*500, y: Math.random()*500 }]);
+                    }
+                }
+                document.getElementById('f-in').value = '';
+            }
+            if(content) {
+                await sb.from('messages').insert([{ username:u, content:content, color:c, size:size, type:'text', x: Math.random()*500, y: Math.random()*500 }]);
+                msgCount++;
+                updateJumpBtn();
+            }
+        } else {
+            // JUMPSCARE
+            await sb.from('messages').insert([{ username:'SYSTEM', content:'BOO', type:'jumpscare' }]);
+            msgCount = 0; updateJumpBtn();
+            startCooldown();
+        }
+        document.getElementById('msg-in').value = '';
+        document.getElementById('url-in').value = '';
+        load();
+    }
+
+    function updateJumpBtn() {
+        const btn = document.getElementById('jump-btn');
+        btn.disabled = msgCount < 5;
+        btn.innerText = `JUMPSCARE ALL (${msgCount}/5)`;
+    }
+
+    function startCooldown() {
+        const img = document.getElementById('cooldown-img');
+        img.style.display = 'block';
+        setTimeout(() => img.style.display = 'none', 5000);
+    }
+
+    // --- SYNCHRO GLOBALE ---
+    async function load() {
+        const { data } = await sb.from('messages').select('*').order('created_at', { ascending: true });
+        if(!data) return;
+
+        const canvas = document.getElementById('canvas');
+        canvas.innerHTML = '';
 
         data.forEach(m => {
-            // Détection Jumpscare
-            if (m.type === 'jumpscare' && m.id !== lastJumpscareId) {
-                runJumpscare();
-                lastJumpscareId = m.id;
-            }
-
-            if (m.type === 'text') {
-                const isImage = m.content.includes('supabase.co/storage');
-                win.innerHTML += `
-                    <div class="msg-bubble">
-                        <b style="color: ${m.color}">${m.username}</b>
-                        <div style="font-size: 1.1em;">
-                            ${isImage ? `<img src="${m.content}">` : m.content}
-                        </div>
-                    </div>
-                `;
+            if(m.type === 'wallpaper') document.body.style.backgroundImage = `url('${m.content}')`;
+            if(m.type === 'style') applyStyle(m.content);
+            if(m.type === 'jumpscare' && m.id !== lastId) { runJumpscare(); lastId = m.id; }
+            
+            if(m.type === 'text') {
+                const div = document.createElement('div');
+                div.className = 'msg-node panel';
+                div.style.left = m.x + 'px'; div.style.top = m.y + 'px';
+                div.style.fontSize = m.size;
+                div.innerHTML = `<b style="color:${m.color}">${m.username}:</b><br>${m.content.includes('http') ? `<img src="${m.content}" style="width:100%">` : m.content}`;
+                
+                // Drag and Drop (Mode Libre)
+                div.onmousedown = (e) => {
+                    let shiftX = e.clientX - div.getBoundingClientRect().left;
+                    let shiftY = e.clientY - div.getBoundingClientRect().top;
+                    document.onmousemove = (e) => {
+                        div.style.left = e.clientX - shiftX - 320 + 'px';
+                        div.style.top = e.clientY - shiftY + 'px';
+                    };
+                    document.onmouseup = async () => {
+                        document.onmousemove = null;
+                        await sb.from('messages').update({ x: parseInt(div.style.left), y: parseInt(div.style.top) }).eq('id', m.id);
+                    };
+                };
+                canvas.appendChild(div);
             }
         });
-        win.scrollTop = win.scrollHeight;
     }
 
-    async function sendAll() {
-        const u = document.getElementById('username').value || 'Anonyme';
-        const t = document.getElementById('msg-input').value;
-        const c = document.getElementById('user-color').value;
-        const files = document.getElementById('file-input').files;
-
-        if (t) {
-            await sb.from('messages').insert([{ username: u, content: t, color: c, type: 'text' }]);
-        }
-
-        if (files.length > 0) {
-            for (let f of files) {
-                const path = `${Date.now()}_${f.name}`;
-                const { data } = await sb.storage.from('fichiers').upload(path, f);
-                if (data) {
-                    const url = `${S_URL}/storage/v1/object/public/fichiers/${path}`;
-                    await sb.from('messages').insert([{ username: u, content: url, color: c, type: 'text' }]);
-                }
-            }
-        }
-        document.getElementById('msg-input').value = '';
-        document.getElementById('file-input').value = '';
-        loadChat();
+    // --- FONCTIONS SOCIALES ---
+    async function changeGlobalBg() {
+        const url = prompt("URL du fond pour TOUT LE MONDE:");
+        if(url) await sb.from('messages').insert([{ type:'wallpaper', content: url }]);
     }
 
-    // --- JUMPSCARE ---
-    async function sendJumpscare() {
-        await sb.from('messages').insert([{ username: 'SYSTEM', type: 'jumpscare', content: '!!!' }]);
+    async function changeGlobalStyle(s) {
+        await sb.from('messages').insert([{ type:'style', content: s }]);
     }
+
+    function applyStyle(s) {
+        const b = document.body;
+        b.className = '';
+        if(s === 'dark') b.classList.add('theme-dark');
+        if(s === 'shrek') b.classList.add('theme-shrek');
+    }
+
+    function toggleThemeLocal() { document.getElementById('body').classList.toggle('theme-dark'); }
 
     function runJumpscare() {
-        const ov = document.getElementById('jumpscare-overlay');
-        const imgs = [
-            'https://media.tenor.com/r9GmMxwqtwgAAAAe/jeff-the-killer-that-face.png',
-            'https://www.shutterstock.com/image-vector/bold-yellow-numbers-67-white-600w-2697852337.jpg',
-            'https://i.ytimg.com/vi/1m1LVq0ktQE/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBvIKt8OlTEldpCRVnN8jSkajSXMw'
-        ];
-        ov.style.display = 'block';
-        ov.classList.add('jumpscare-flash');
-        let i = 0;
-        const itv = setInterval(() => {
-            ov.innerHTML = `<img src="${imgs[i%3]}" style="width:100%; height:100%; object-fit:cover;">`;
-            i++;
-            if(i > 30) { 
-                clearInterval(itv); 
-                ov.style.display='none'; 
-                ov.classList.remove('jumpscare-flash');
-            }
-        }, 60);
-    }
-
-    // --- CUSTOM ---
-    function changeBg() {
-        const link = prompt("Lien direct image (URL):");
-        if(link) document.body.style.backgroundImage = `url('${link}')`;
-    }
-
-    function changeStyle() {
-        const root = document.querySelector(':root');
-        root.style.setProperty('--grad', 'linear-gradient(180deg, #ff00cc 0%, #3333ff 100%)');
-        alert("Style Glossy activé !");
+        const ov = document.getElementById('jumpscare');
+        ov.innerHTML = `<img src="https://media.tenor.com/r9GmMxwqtwgAAAAe/jeff-the-killer-that-face.png" style="width:100%; height:100%; object-fit:cover;">`;
+        ov.style.display = 'block'; ov.classList.add('flash');
+        setTimeout(() => { ov.style.display = 'none'; ov.classList.remove('flash'); }, 2000);
     }
 
     async function adminClear() {
-        if(confirm("Supprimer TOUT le forum ?")) {
+        if(confirm("SUPPRIMER TOUTE LA BASE DE DONNÉES ?")) {
             await sb.from('messages').delete().neq('id', 0);
-            loadChat();
+            location.reload();
         }
     }
 
-    setInterval(loadChat, 3000);
-    loadChat();
+    setInterval(load, 3000);
+    load();
 </script>
-
 </body>
 </html>
